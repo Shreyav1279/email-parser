@@ -87,7 +87,14 @@ def process_email(request: EmailRequest):
     order_date = extract_order_date_from_text(request.email_body)
 
     if not order_date:
-        order_date = request.email_received_date
+        try:
+            # Handle ISO datetime from Power Automate
+            order_date = datetime.fromisoformat(
+                request.email_received_date.replace("Z", "")
+            ).date().isoformat()
+        except:
+            # fallback if anything unexpected
+            order_date = request.email_received_date.split("T")[0]
 
     orders = parse_unstructured_orders(request.email_body)
 
