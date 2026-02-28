@@ -45,42 +45,41 @@ def parse_unstructured_orders(text: str) -> List[Dict]:
 
     for line in lines:
 
+        match = None
+        used_pattern = None
+
         for pattern in PATTERNS:
 
             match = re.search(pattern, line, re.IGNORECASE)
 
             if match:
-                try:
+                used_pattern = pattern
+                break
 
-                    if pattern == pattern_format1:
-                        material, qty, _, price = match.groups()
+        if match:
+            try:
 
-                    elif pattern == pattern_format2:
-                        qty, _, material, price = match.groups()
+                if used_pattern == pattern_format1:
+                    material, qty, _, price = match.groups()
 
-                    else:
-                        material, qty, price = match.groups()
+                elif used_pattern == pattern_format2:
+                    qty, _, material, price = match.groups()
 
-                    qty = int(qty)
-                    price = int(price.replace(",", ""))
+                else:
+                    material, qty, price = match.groups()
 
-                    material = material.strip()
+                qty = int(qty)
+                price = int(price.replace(",", ""))
 
-                    # prevent duplicates
-                    if any(o["VendorPartNo"] == material for o in orders):
-                        break
+                orders.append({
+                    "VendorPartNo": material.strip(),
+                    "Quantity": qty,
+                    "UnitPrice": price,
+                    "TotalAmount": qty * price
+                })
 
-                    orders.append({
-                        "VendorPartNo": material,
-                        "Quantity": qty,
-                        "UnitPrice": price,
-                        "TotalAmount": qty * price
-                    })
-
-                    break
-
-                except:
-                    continue
+            except:
+                continue
 
     return orders
 
