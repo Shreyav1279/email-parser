@@ -64,8 +64,14 @@ def parse_unstructured_orders(text: str) -> List[Dict]:
                     qty = int(qty)
                     price = int(price.replace(",", ""))
 
+                    material = material.strip()
+
+                    # prevent duplicates
+                    if any(o["VendorPartNo"] == material for o in orders):
+                        break
+
                     orders.append({
-                        "VendorPartNo": material.strip(),
+                        "VendorPartNo": material,
                         "Quantity": qty,
                         "UnitPrice": price,
                         "TotalAmount": qty * price
