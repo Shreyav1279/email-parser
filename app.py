@@ -92,7 +92,13 @@ def parse_unstructured_orders(text: str) -> List[Dict]:
 
 def is_structured_email(text: str):
 
-    if "Material value" in text and "Vendor Part No" in text:
+    if "Material value" in text:
+        return True
+
+    if "Unit Price" in text:
+        return True
+
+    if "P.O Number" in text:
         return True
 
     return False
@@ -106,24 +112,25 @@ def parse_structured_orders(text: str):
 
     orders = []
 
+    # remove extra spaces
+    clean_text = re.sub(r'\s+', ' ', text)
+
     pattern = re.compile(
-        r'\d{2}-\d{2}-\d{4}\s+'
-        r'([A-Za-z]+)\s+'
-        r'.*?\s+'
-        r'([A-Z0-9]+)\s+'
-        r'([A-Z0-9\-\(\)]+)\s+'
-        r'(\d+)\s+'
-        r'([\d,]+)\s+'
-        r'([\d,]+)',
-        re.MULTILINE
+        r'(\d{2}-\d{2}-\d{4})\s+'      # date
+        r'([A-Za-z]+)\s+'              # branch
+        r'([A-Z0-9]+)\s+'              # rashi
+        r'([A-Z0-9\-\(\)]+)\s+'        # vendor
+        r'(\d+)\s+'                    # qty
+        r'([\d,]+)\s+'                 # unit price
+        r'([\d,]+)'                    # material value
     )
 
-    matches = pattern.findall(text)
+    matches = pattern.findall(clean_text)
 
     for m in matches:
         try:
 
-            branch, rashi, vendor, qty, price, material = m
+            date, branch, rashi, vendor, qty, price, material = m
 
             qty = int(qty)
             price = int(price.replace(",", ""))
@@ -145,7 +152,6 @@ def parse_structured_orders(text: str):
             continue
 
     return orders
-
 
 # ===============================
 # API Endpoint
