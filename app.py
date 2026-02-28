@@ -50,6 +50,7 @@ def parse_unstructured_orders(text: str) -> List[Dict]:
         if not line:
             continue
 
+        # try pattern 1
         match = re.search(pattern_format1, line, re.IGNORECASE)
 
         if not match:
@@ -87,82 +88,6 @@ def parse_unstructured_orders(text: str) -> List[Dict]:
 
 
 # ===============================
-# NEW → Structured email detection
-# ===============================
-
-def is_structured_email(text: str):
-
-    if "Material value" in text:
-        return True
-
-    return False
-
-
-# ===============================
-# NEW → Structured parser
-# ===============================
-
-def parse_structured_orders(text: str):
-
-    orders = []
-
-    lines = [l.strip() for l in text.splitlines() if l.strip()]
-
-    i = 0
-
-    while i < len(lines):
-
-        try:
-
-            line = lines[i]
-
-            # detect date line
-            if re.search(r"\d{2}-\d{2}-\d{4}", line):
-
-                branch = lines[i + 1]
-                rashi = lines[i + 2]
-                vendor = lines[i + 3]
-                qty = lines[i + 4]
-                price = lines[i + 5]
-                material = lines[i + 6]
-
-                # skip header blocks
-                if branch.lower() == "branch":
-                    i += 1
-                    continue
-
-                # skip if not number
-                if not qty.isdigit():
-                    i += 1
-                    continue
-
-                qty = int(qty)
-                price = int(price.replace(",", ""))
-                material = int(material.replace(",", ""))
-
-                total = qty * price
-
-                orders.append({
-                    "Branch": branch,
-                    "RashiPartNo": rashi,
-                    "VendorPartNo": vendor,
-                    "Quantity": qty,
-                    "UnitPrice": price,
-                    "TotalAmount": total,
-                    "MaterialValue": material
-                })
-
-                i += 7
-                continue
-
-        except:
-            pass
-
-        i += 1
-
-    return orders
-
-# ===============================
 # API Endpoint
 # ===============================
 
@@ -172,17 +97,7 @@ def process_email(request: EmailRequest):
     branch = extract_branch(request.email_body)
     rashi_part_no = extract_rashi_part_no(request.email_body)
 
-    # NEW LOGIC → structured / unstructured
-
-    if is_structured_email(request.email_body):
-
-        orders = parse_structured_orders(request.email_body)
-        detected_format = "STRUCTURED_FORMAT"
-
-    else:
-
-        orders = parse_unstructured_orders(request.email_body)
-        detected_format = "UNSTRUCTURED_FORMAT"
+    orders = parse_unstructured_orders(request.email_body)
 
     final_orders = []
 
@@ -190,14 +105,13 @@ def process_email(request: EmailRequest):
         final_orders.append({
             "Branch": branch,
             "RashiPartNo": rashi_part_no,
-            **order,
-            "MaterialValue": order.get("MaterialValue", "")
+            **order
         })
 
     confidence = 0.95 if final_orders else 0.2
 
     return {
-        "detected_format": detected_format,
+        "detected_format": "UNSTRUCTURED_FORMAT",
         "orders": final_orders,
         "confidence": confidence
     }
