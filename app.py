@@ -114,16 +114,20 @@ def parse_structured_orders(text: str):
 
         try:
 
-            # look for date
+            # find date
             if re.match(r"\d{2}-\d{2}-\d{4}", lines[i]):
 
-                date = lines[i]
                 branch = lines[i + 1]
                 rashi = lines[i + 2]
                 vendor = lines[i + 3]
                 qty = lines[i + 4]
                 price = lines[i + 5]
                 material = lines[i + 6]
+
+                # skip headers accidentally matched
+                if branch.lower() == "branch":
+                    i += 1
+                    continue
 
                 qty = int(qty)
                 price = int(price.replace(",", ""))
