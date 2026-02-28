@@ -95,12 +95,6 @@ def is_structured_email(text: str):
     if "Material value" in text:
         return True
 
-    if "Unit Price" in text:
-        return True
-
-    if "P.O Number" in text:
-        return True
-
     return False
 
 
@@ -112,44 +106,48 @@ def parse_structured_orders(text: str):
 
     orders = []
 
-    # remove extra spaces
-    clean_text = re.sub(r'\s+', ' ', text)
+    lines = [l.strip() for l in text.splitlines() if l.strip()]
 
-    pattern = re.compile(
-        r'(\d{2}-\d{2}-\d{4})\s+'      # date
-        r'([A-Za-z]+)\s+'              # branch
-        r'([A-Z0-9]+)\s+'              # rashi
-        r'([A-Z0-9\-\(\)]+)\s+'        # vendor
-        r'(\d+)\s+'                    # qty
-        r'([\d,]+)\s+'                 # unit price
-        r'([\d,]+)'                    # material value
-    )
+    i = 0
 
-    matches = pattern.findall(clean_text)
+    while i < len(lines):
 
-    for m in matches:
         try:
 
-            date, branch, rashi, vendor, qty, price, material = m
+            # look for date
+            if re.match(r"\d{2}-\d{2}-\d{4}", lines[i]):
 
-            qty = int(qty)
-            price = int(price.replace(",", ""))
-            material = int(material.replace(",", ""))
+                date = lines[i]
+                branch = lines[i + 1]
+                rashi = lines[i + 2]
+                vendor = lines[i + 3]
+                qty = lines[i + 4]
+                price = lines[i + 5]
+                material = lines[i + 6]
 
-            total = qty * price
+                qty = int(qty)
+                price = int(price.replace(",", ""))
+                material = int(material.replace(",", ""))
 
-            orders.append({
-                "Branch": branch,
-                "RashiPartNo": rashi,
-                "VendorPartNo": vendor,
-                "Quantity": qty,
-                "UnitPrice": price,
-                "TotalAmount": total,
-                "MaterialValue": material
-            })
+                total = qty * price
+
+                orders.append({
+                    "Branch": branch,
+                    "RashiPartNo": rashi,
+                    "VendorPartNo": vendor,
+                    "Quantity": qty,
+                    "UnitPrice": price,
+                    "TotalAmount": total,
+                    "MaterialValue": material
+                })
+
+                i += 7
+                continue
 
         except:
-            continue
+            pass
+
+        i += 1
 
     return orders
 
