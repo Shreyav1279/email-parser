@@ -114,8 +114,10 @@ def parse_structured_orders(text: str):
 
         try:
 
-            # find date
-            if re.match(r"\d{2}-\d{2}-\d{4}", lines[i]):
+            line = lines[i]
+
+            # detect date line
+            if re.search(r"\d{2}-\d{2}-\d{4}", line):
 
                 branch = lines[i + 1]
                 rashi = lines[i + 2]
@@ -124,8 +126,13 @@ def parse_structured_orders(text: str):
                 price = lines[i + 5]
                 material = lines[i + 6]
 
-                # skip headers accidentally matched
+                # skip header blocks
                 if branch.lower() == "branch":
+                    i += 1
+                    continue
+
+                # skip if not number
+                if not qty.isdigit():
                     i += 1
                     continue
 
