@@ -45,24 +45,27 @@ def parse_unstructured_orders(text: str) -> List[Dict]:
 
     for line in lines:
 
-        match = None
-        used_pattern = None
+        line = line.strip()
 
-        for pattern in PATTERNS:
+        if not line:
+            continue
 
-            match = re.search(pattern, line, re.IGNORECASE)
+        # try pattern 1
+        match = re.search(pattern_format1, line, re.IGNORECASE)
 
-            if match:
-                used_pattern = pattern
-                break
+        if not match:
+            match = re.search(pattern_format2, line, re.IGNORECASE)
+
+        if not match:
+            match = re.search(pattern_format3, line, re.IGNORECASE)
 
         if match:
             try:
 
-                if used_pattern == pattern_format1:
+                if len(match.groups()) == 4:
                     material, qty, _, price = match.groups()
 
-                elif used_pattern == pattern_format2:
+                elif pattern_format2 in match.re.pattern:
                     qty, _, material, price = match.groups()
 
                 else:
